@@ -63,14 +63,15 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       return;
     }
+    let mounted = true;
     setLoading(true);
     refresh()
       .catch(() => {})
       .finally(() => {
-        // refresh() versions its data writes; this only controls the spinner.
-        setLoading(false);
+        if (mounted) setLoading(false);
       });
     return () => {
+      mounted = false;
       inventoryLoadVersion.current++;
     };
   }, [user?.id, refresh]);
