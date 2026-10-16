@@ -418,7 +418,7 @@ function normalizeRecipe(value: unknown): RecipeShape {
       ? value as Record<string, unknown>
       : {};
   return {
-    title: typeof r.title === "string" ? r.title : "Untitled",
+    title: typeof r.title === "string" && r.title.trim() ? r.title : "",
     description: typeof r.description === "string" ? r.description : "",
     time_minutes: Number(r.time_minutes) || 30,
     servings: Number(r.servings) || 1,
