@@ -410,7 +410,13 @@ function extractJSON(content: string): unknown {
   );
 }
 
-function normalizeRecipe(r: Record<string, unknown>): RecipeShape {
+function normalizeRecipe(value: unknown): RecipeShape {
+  // Model output can omit a meal slot despite the requested JSON schema.
+  // Normalize missing/non-object values so repairPlan can replace them safely.
+  const r: Record<string, unknown> =
+    typeof value === "object" && value !== null && !Array.isArray(value)
+      ? value as Record<string, unknown>
+      : {};
   return {
     title: typeof r.title === "string" ? r.title : "Untitled",
     description: typeof r.description === "string" ? r.description : "",
