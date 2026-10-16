@@ -1,4 +1,4 @@
-import { createContext, useContext, useCallback, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import type { PantryItem, SpiceItem, IngredientDetail } from "./supabase";
 import {
   fetchPantry, addPantryItem, updatePantryItem, deletePantryItem,
@@ -32,6 +32,8 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
   const [pantry, setPantry] = useState<PantryItem[]>([]);
   const [spices, setSpices] = useState<SpiceItem[]>([]);
   const [loading, setLoading] = useState(true);
+  // Ignore inventory responses that finish after a refresh or account switch.
+  const inventoryLoadVersion = useRef(0);
 
   const quantityTracking = profile?.quantity_tracking_enabled ?? true;
   const setQuantityTracking = (_v: boolean) => {
@@ -39,25 +41,39 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
   };
 
   const refresh = useCallback(async () => {
+    const version = ++inventoryLoadVersion.current;
+    if (!user) {
+      setPantry([]);
+      setSpices([]);
+      return;
+    }
     const [items, spicesList] = await Promise.all([fetchPantry(), fetchSpices()]);
+    // A slower request for the previous account must never replace the active
+    // account's inventory. Also discard responses superseded by a newer refresh.
+    if (version !== inventoryLoadVersion.current) return;
     setPantry(items);
     setSpices(spicesList);
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
     if (!user) {
+      inventoryLoadVersion.current++;
       setPantry([]);
       setSpices([]);
       setLoading(false);
       return;
     }
-    let mounted = true;
     setLoading(true);
     refresh()
       .catch(() => {})
-      .finally(() => { if (mounted) setLoading(false); });
-    return () => { mounted = false; };
-  }, [user, refresh]);
+      .finally(() => {
+        // refresh() versions its data writes; this only controls the spinner.
+        setLoading(false);
+      });
+    return () => {
+      inventoryLoadVersion.current++;
+    };
+  }, [user?.id, refresh]);
 
   const addPantryFn = useCallback(async (name: string, quantity = 1, unit = "pieces"): Promise<PantryItem> => {
     const qty = quantityTracking ? quantity : 1;
