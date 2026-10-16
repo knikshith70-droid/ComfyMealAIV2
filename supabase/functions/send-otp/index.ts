@@ -50,12 +50,15 @@ Deno.serve(async (req: Request) => {
 
     // Rate limit: no more than one code per email per 60s
     const since = new Date(Date.now() - RATE_LIMIT_SECONDS * 1000).toISOString();
-    const { count } = await supabase
+    const { count, error: rateLimitError } = await supabase
       .from("otp_codes")
       .select("id", { count: "exact", head: true })
       .eq("email", normalized)
       .gte("created_at", since);
-    if (count && count > 0) {
+    if (rateLimitError) {
+      throw new Error("Could not verify the OTP request rate limit.");
+    }
+    if (count !== null && count > 0) {
       return new Response(
         JSON.stringify({ error: `A code was sent recently. Please wait ${RATE_LIMIT_SECONDS}s before requesting another.` }),
         { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
