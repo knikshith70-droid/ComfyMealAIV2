@@ -37,7 +37,7 @@ Deno.serve(async (req: Request) => {
       { auth: { persistSession: false } },
     );
 
-    if (!/^\\d{6}$/.test(trimmedCode)) {
+    if (!/^\d{6}$/.test(trimmedCode)) {
       return new Response(
         JSON.stringify({ error: "That code is invalid or has already been used. Please request a new one." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
