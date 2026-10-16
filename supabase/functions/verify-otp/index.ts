@@ -37,39 +37,35 @@ Deno.serve(async (req: Request) => {
       { auth: { persistSession: false } },
     );
 
-    const codeHash = await sha256(trimmedCode);
-
-    // Find the most recent unconsumed, unexpired code for this email matching the hash.
-    const { data: rows, error: queryError } = await admin
-      .from("otp_codes")
-      .select("id, expires_at")
-      .eq("email", normalized)
-      .eq("code_hash", codeHash)
-      .is("consumed_at", null)
-      .gt("expires_at", new Date().toISOString())
-      .order("created_at", { ascending: false })
-      .limit(1);
-
-    if (queryError) {
-      throw new Error(`Failed to verify code: ${queryError.message}`);
-    }
-
-    const match = rows?.[0];
-    if (!match) {
+    if (!/^\\d{6}$/.test(trimmedCode)) {
       return new Response(
         JSON.stringify({ error: "That code is invalid or has already been used. Please request a new one." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    // Consume the code atomically — mark it used so it can't be reused.
-    const { error: consumeError } = await admin
-      .from("otp_codes")
-      .update({ consumed_at: new Date().toISOString() })
-      .eq("id", match.id)
-      .is("consumed_at", null); // guard against a race
-    if (consumeError) {
-      throw new Error(`Failed to consume code: ${consumeError.message}`);
+    const codeHash = await sha256(trimmedCode);
+
+    // The database function locks the current code row and counts failed attempts
+    // atomically, so parallel requests cannot bypass the five-attempt limit.
+    const { data: attempts, error: attemptError } = await admin.rpc("verify_otp_attempt", {
+      p_email: normalized,
+      p_code_hash: codeHash,
+    });
+
+    if (attemptError) {
+      throw new Error("Could not verify the code. Please try again.");
+    }
+
+    const attempt = attempts?.[0] as { status?: string; otp_id?: string } | undefined;
+    if (attempt?.status !== "verified") {
+      const message = attempt?.status === "locked"
+        ? "Too many incorrect attempts. Please request a new code."
+        : "That code is invalid or has already been used. Please request a new one.";
+      return new Response(
+        JSON.stringify({ error: message }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
     // generateLink creates the user if they don't exist and issues a one-time
