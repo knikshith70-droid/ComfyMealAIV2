@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useI18n } from "../lib/i18n";
 import { useInventory } from "../lib/inventory";
-import { generateMealPlan, saveMealPlan } from "../lib/api";
+import { generateMealPlan, saveMealPlanToSavedRecipes, addNutritionHistory } from "../lib/api";
 import type { MealPlanDay, MealPlanSettings, PantryItem, Profile, Recipe, SpiceItem } from "../lib/supabase";
 import { RecipeDetailModal } from "../components/RecipeDetailModal";
 import { ChipSelector } from "../components/ChipSelector";
@@ -53,6 +53,13 @@ export function MealPlanPage({ profile }: Props) {
         language: lang,
       });
       setPlan(res.plan);
+      // Record generated plan meals in the same history used by Recent Recipes.
+      const generatedMeals = res.plan.flatMap((day) =>
+        (["breakfast", "lunch", "dinner", "snacks"] as const)
+          .filter((slot) => day[slot]?.title)
+          .map((slot) => ({ recipe: day[slot], mealType: slot })),
+      );
+      await Promise.all(generatedMeals.map(({ recipe, mealType }) => addNutritionHistory(recipe, mealType)));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Meal plan generation failed.");
     } finally {
@@ -89,7 +96,7 @@ export function MealPlanPage({ profile }: Props) {
     setSaving(true);
     setError(null);
     try {
-      await saveMealPlan(duration, { budget, cook_time: cookTime, dietary }, plan);
+      await saveMealPlanToSavedRecipes(duration, { budget, cook_time: cookTime, dietary }, plan);
       setSaved(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save plan.");
