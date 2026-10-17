@@ -367,6 +367,30 @@ export async function generateMealPlan(payload: {
   return callEdgeFunction<MealPlanResponse>("generate-meal-plan", payload);
 }
 
+export async function saveMealPlanToSavedRecipes(duration: string, settings: MealPlanSettings, planData: MealPlanDay[]): Promise<void> {
+  const meals = planData.flatMap((day, index) =>
+    (["breakfast", "lunch", "dinner", "snacks"] as const)
+      .map((slot) => ({ day, index, slot, recipe: day[slot] }))
+      .filter((item) => item.recipe?.title),
+  );
+  const title = `Meal Plan — ${duration}`;
+  const description = `Saved meal plan for ${planData.length} day(s). Budget: ${settings.budget}; cooking time: ${settings.cook_time}.`;
+  const ingredients = meals.flatMap(({ recipe }) => recipe.ingredients ?? []);
+  const steps = meals.map(({ day, index, slot, recipe }) =>
+    `Day ${index + 1} (${day.date ?? "date not set"}) — ${slot}: ${recipe.title}. ${recipe.description ?? ""}`,
+  );
+  const tags = ["Meal Plan", duration, ...settings.dietary].filter(Boolean);
+  await saveRecipe({
+    title,
+    description,
+    time_minutes: meals.reduce((sum, item) => sum + (item.recipe.time_minutes ?? 0), 0),
+    servings: Math.max(1, ...meals.map(({ recipe }) => recipe.servings ?? 1)),
+    ingredients: [...new Set(ingredients)],
+    steps,
+    tags,
+  });
+}
+
 export async function saveMealPlan(duration: string, settings: MealPlanSettings, planData: MealPlanDay[]): Promise<MealPlan> {
   const { data, error } = await supabase
     .from("meal_plans")
