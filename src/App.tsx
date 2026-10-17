@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { AuthProvider, useAuth } from "./lib/auth";
 import { I18nProvider } from "./lib/i18n";
 import { NavProvider } from "./lib/nav";
 import { InventoryProvider } from "./lib/inventory";
 import { AuthScreen } from "./components/AuthScreen";
+import { LandingPage } from "./components/LandingPage";
 import { Onboarding } from "./components/Onboarding";
 import { AppShell } from "./components/AppShell";
 import { Logo } from "./components/Logo";
@@ -10,6 +12,7 @@ import { Loader2 } from "lucide-react";
 
 function Shell() {
   const { user, profile, loading, refreshProfile } = useAuth();
+  const [showAuth, setShowAuth] = useState(false);
 
   if (loading) {
     return (
@@ -22,7 +25,16 @@ function Shell() {
     );
   }
 
-  if (!user) return <AuthScreen />;
+  if (!user) {
+    return showAuth ? (
+      <AuthScreen onBackToLanding={() => setShowAuth(false)} />
+    ) : (
+      <LandingPage
+        onGetStarted={() => setShowAuth(true)}
+        onSignIn={() => setShowAuth(true)}
+      />
+    );
+  }
 
   // If profile failed to load, show a loading state rather than crashing
   if (!profile) {
@@ -38,9 +50,7 @@ function Shell() {
 
   // Show onboarding for users who haven't completed it
   if (!profile.onboarded) {
-    return (
-      <Onboarding onDone={async () => { await refreshProfile(); }} />
-    );
+    return <Onboarding onDone={async () => { await refreshProfile(); }} />;
   }
 
   return <AppShell profile={profile} />;
