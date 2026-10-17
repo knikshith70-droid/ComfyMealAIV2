@@ -16,7 +16,7 @@ export function RecentRecipesPage() {
 
   useEffect(() => {
     let mounted = true;
-    fetchNutritionHistory(200)
+    fetchNutritionHistory(15)
       .then((data) => { if (mounted) setEntries(data); })
       .catch((e) => { if (mounted) setError(e instanceof Error ? e.message : "Failed to load recent recipes."); })
       .finally(() => { if (mounted) setLoading(false); });
