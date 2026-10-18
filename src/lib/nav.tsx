@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 export type Page =
   | "dashboard"
@@ -21,7 +21,23 @@ interface NavState {
 const NavContext = createContext<NavState | undefined>(undefined);
 
 export function NavProvider({ children }: { children: ReactNode }) {
-  const [page, setPage] = useState<Page>("dashboard");
+  const [page, setPage] = useState<Page>(() => {
+    try {
+      const stored = sessionStorage.getItem("comfymeal-active-page");
+      const valid: Page[] = ["dashboard", "generate", "saved", "recent", "meal-plan", "language", "account"];
+      return stored && valid.includes(stored as Page) ? stored as Page : "dashboard";
+    } catch {
+      return "dashboard";
+    }
+  });
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem("comfymeal-active-page", page);
+    } catch {
+      // Navigation still works if browser storage is unavailable.
+    }
+  }, [page]);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
 
   const navigate = (next: Page, action: PendingAction = null) => {
