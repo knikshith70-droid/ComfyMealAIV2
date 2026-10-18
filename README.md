@@ -1,48 +1,74 @@
-# 🍽️ ComfyMeal AI
+# ComfyMeal AI
 
-An AI-powered pantry-first meal planning platform that generates personalized recipes and meal plans based on your pantry inventory, dietary preferences, household size, and cooking preferences.
+ComfyMeal AI is an AI-powered, pantry-first meal planning app. It helps people decide what to cook by generating personalized recipes and meal plans based on available ingredients, dietary preferences, household needs, budget, and cooking time.
 
-## 🚀 Features
+## Features
 
-- 🤖 AI-powered personalized recipe generation
-- 📅 Multi-day meal planning (1 day to 1 month)
-- 🥫 Smart pantry management
-- 🌶️ Separate Spices & Condiments inventory
-- 🧾 Grocery receipt OCR using Tesseract.js
-- 📊 AI-estimated nutrition tracking
-- ⚙️ Flex Engine for recipe customization
-- 🔄 One-click AI micro-adjustments
-- 🌍 Multi-language support (6 languages)
-- 🔐 Google Sign-In & Email OTP Authentication
-- A voice assistant which can add ingredients using your voice.
+- Personalized AI recipe generation
+- Meal plans from one day up to one month
+- Pantry, spices, and condiment inventory
+- Grocery receipt scanning with OCR
+- Estimated nutrition information and history
+- Recipe adjustments and cooking guidance
+- Saved recipes and recent recipe history
+- Google sign-in and email OTP authentication
+- Multilingual interface
+- Voice-based ingredient entry
 
-## 🛠️ Built With
+## Tech Stack
 
-- Bolt
-- React
-- Supabase PostgreSQL
-- Groq API (Llama-3.3-70B)
-- Tesseract.js
-- Resend
-- i18next
-- GitHub
+- React, TypeScript, and Vite
+- Supabase (authentication, PostgreSQL, and Edge Functions)
+- Groq API for AI-powered generation
+- Tesseract.js for receipt OCR
+- Tailwind CSS and Lucide icons
 
-## 📦 Installation
+## Getting Started
+
+### Requirements
+
+- Node.js and npm
+- A Supabase project
+- The API credentials required by the configured Supabase Edge Functions
+
+### Install and run locally
 
 ```bash
-git clone https://github.com/yourusername/comfymeal-ai.git
-
-cd comfymeal-ai
-
+git clone https://github.com/knikshith70-droid/ComfyMealAIV2.git
+cd ComfyMealAIV2
 npm install
-
 npm run dev
 ```
 
-## 🌐 Live Demo
+### Environment variables
+
+Create a `.env` file in the project root and configure the Supabase variables used by the app:
+
+```env
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+Configure any AI-provider and email-service secrets in the appropriate Supabase Edge Function environment settings. **Do not commit real API keys, service-role keys, or other secrets to GitHub.**
+
+### Useful commands
+
+```bash
+npm run dev       # Start the development server
+npm run build     # Create a production build
+npm run preview   # Preview the production build
+npm run lint      # Run ESLint
+npm run typecheck # Check TypeScript types
+```
+
+## Deployment
+
+Deploy the frontend to a Vite-compatible host and configure the required environment variables there. Deploy the Supabase migrations and Edge Functions to your own Supabase project before using the app in production.
+
+## Live Demo
 
 https://comfymeal-ai-meal-pl-5br9.bolt.host/
 
-## 📄 License
+## License
 
-Developed by **Nikshith Kamsu**.
+No license has been specified yet. Contact the project owner before redistributing or reusing the code.
