@@ -95,8 +95,8 @@ export function AppTour({ open, onClose, onFinish }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-charcoal-900/55 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-labelledby="comfymeal-tour-title">
-      <section className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-cream-200 bg-cream-50 shadow-2xl">
+    <div className="fixed inset-0 z-[100] pointer-events-none" role="dialog" aria-modal="false" aria-labelledby="comfymeal-tour-title">
+      <section className="pointer-events-auto absolute bottom-4 left-1/2 w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 overflow-hidden rounded-3xl border border-cream-200 bg-cream-50 shadow-2xl sm:bottom-6">
         <div className="h-1.5 w-full bg-cream-200">
           <div className="h-full rounded-r-full bg-sage-600 transition-all duration-300" style={{ width: `${((stepIndex + 1) / STEPS.length) * 100}%` }} />
         </div>
