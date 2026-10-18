@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "../lib/i18n";
 import { useInventory } from "../lib/inventory";
 import {
@@ -49,6 +49,8 @@ export function GeneratePage({ profile, pendingAction, onConsumeAction }: Props)
   const [error, setError] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const recipeResultsRef = useRef<HTMLDivElement | null>(null);
+  const hasRestoredResults = useRef(false);
   const [pantryFlags, setPantryFlags] = useState<PantryFlag[]>([]);
   const [adjusting, setAdjusting] = useState<{ index: number; label: string } | null>(null);
   const [cookingIndex, setCookingIndex] = useState<number | null>(null);
@@ -88,6 +90,38 @@ export function GeneratePage({ profile, pendingAction, onConsumeAction }: Props)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingAction, lastSession]);
+
+  useEffect(() => {
+    try {
+      const key = `comfymeal-generate-state-${profile.id}`;
+      const raw = sessionStorage.getItem(key);
+      if (raw) {
+        const stored = JSON.parse(raw) as { recipes?: Recipe[]; pantryFlags?: PantryFlag[]; flex?: FlexState };
+        if (Array.isArray(stored.recipes)) setRecipes(stored.recipes);
+        if (Array.isArray(stored.pantryFlags)) setPantryFlags(stored.pantryFlags);
+        if (stored.flex) setFlex(stored.flex);
+      }
+    } catch {
+      // Ignore invalid or unavailable browser storage.
+    } finally {
+      hasRestoredResults.current = true;
+    }
+  }, [profile.id]);
+
+  useEffect(() => {
+    if (!hasRestoredResults.current) return;
+    try {
+      sessionStorage.setItem(`comfymeal-generate-state-${profile.id}`, JSON.stringify({ recipes, pantryFlags, flex }));
+    } catch {
+      // The page remains usable if browser storage is unavailable or full.
+    }
+  }, [profile.id, recipes, pantryFlags, flex]);
+
+  useEffect(() => {
+    if (recipes.length > 0) {
+      window.requestAnimationFrame(() => recipeResultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    }
+  }, [recipes]);
 
   const useSoonNames = useMemo(() => new Set(pantryFlags.filter((p) => p.use_soon).map((p) => p.name)), [pantryFlags]);
 
@@ -313,7 +347,7 @@ export function GeneratePage({ profile, pendingAction, onConsumeAction }: Props)
       </div>
 
       {recipes.length > 0 && (
-        <div className="mt-8 space-y-6">
+        <div ref={recipeResultsRef} className="mt-8 space-y-6 scroll-mt-24">
           {recipes.map((recipe, i) => (
             <RecipeCard
               key={i}
