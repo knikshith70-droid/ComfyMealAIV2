@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useI18n } from "../lib/i18n";
 import { useInventory } from "../lib/inventory";
 import { generateMealPlan, saveMealPlanToSavedRecipes, addNutritionHistory } from "../lib/api";
@@ -28,6 +28,18 @@ export function MealPlanPage({ profile }: Props) {
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [regenerating, setRegenerating] = useState<{ dayIndex: number; slot: string } | null>(null);
+  const planResultsRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!plan?.length || generating) return;
+    // Scroll only after the generated plan has rendered in the page.
+    const firstFrame = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        planResultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
+    return () => window.cancelAnimationFrame(firstFrame);
+  }, [plan, generating]);
 
   const dietary: string[] = [
     ...(profile.lifestyle ?? []),
@@ -211,7 +223,7 @@ export function MealPlanPage({ profile }: Props) {
 
       {/* Plan display */}
       {plan && plan.length > 0 && (
-        <div className="mb-6 flex flex-wrap gap-2">
+        <div ref={planResultsRef} className="mb-6 flex flex-wrap gap-2 scroll-mt-24">
           <button type="button" onClick={handleSave} disabled={saving || saved} className="btn-secondary">
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : saved ? <Check className="h-4 w-4 text-sage-700" /> : <CalendarRange className="h-4 w-4" />}
             {saved ? t("planSaved") : t("savePlan")}
