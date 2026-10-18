@@ -38,7 +38,7 @@ Deno.serve(async (req: Request) => {
     const title = (body.title ?? "").trim().slice(0, 180);
     if (!title) return json({ error: "A recipe title is required." }, 400);
 
-    const apiKey = Deno.env.get("GEMINI_API_KEY");
+    const apiKey = Deno.env.get("GEMINI_IMAGE_API_KEY");
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     if (!apiKey || !supabaseUrl || !serviceRoleKey) {
