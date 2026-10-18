@@ -131,22 +131,21 @@ export function AppTour({ open, onClose, onFinish }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-[100]" role="dialog" aria-modal="true" aria-labelledby="comfymeal-tour-title">
-      <div className="absolute inset-0 bg-charcoal-900/20" />
+    <div className="fixed inset-0 z-[100] pointer-events-none" role="dialog" aria-modal="true" aria-labelledby="comfymeal-tour-title">
       {spotlight && (
         <div
           aria-hidden="true"
-          className="pointer-events-none fixed rounded-2xl border-[3px] border-sage-500"
+          className="pointer-events-none fixed rounded-2xl border-[3px] border-sage-500 animate-pulse"
           style={{
             top: spotlight.top,
             left: spotlight.left,
             width: spotlight.width,
             height: spotlight.height,
-            boxShadow: "0 0 0 9999px rgba(31, 41, 32, 0.32), 0 0 0 7px rgba(148, 180, 126, 0.28)",
+            boxShadow: "0 0 0 4px rgba(148, 180, 126, 0.22), 0 0 24px rgba(90, 130, 70, 0.22)",
           }}
         />
       )}
-      <section className="absolute bottom-4 left-1/2 w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 overflow-hidden rounded-3xl border border-cream-200 bg-cream-50 shadow-2xl sm:bottom-6">
+      <section className="pointer-events-auto absolute bottom-4 left-1/2 w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 overflow-hidden rounded-3xl border border-cream-200 bg-cream-50 shadow-2xl sm:bottom-6">
         <div className="h-1.5 w-full bg-cream-200">
           <div className="h-full rounded-r-full bg-sage-600 transition-all duration-300" style={{ width: `${((stepIndex + 1) / STEPS.length) * 100}%` }} />
         </div>
