@@ -73,6 +73,7 @@ interface Props {
 export function AppTour({ open, onClose, onFinish }: Props) {
   const { navigate } = useNav();
   const [stepIndex, setStepIndex] = useState(0);
+  const [spotlight, setSpotlight] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
   const step = STEPS[stepIndex];
 
   useEffect(() => {
@@ -81,6 +82,41 @@ export function AppTour({ open, onClose, onFinish }: Props) {
       navigate(STEPS[0].page);
     }
   }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    let frame = 0;
+    const updateSpotlight = () => {
+      const target = document.querySelector("main");
+      if (!target) {
+        setSpotlight(null);
+        return;
+      }
+      const rect = target.getBoundingClientRect();
+      const left = Math.max(8, rect.left + 8);
+      const top = Math.max(8, rect.top + 8);
+      setSpotlight({
+        top,
+        left,
+        width: Math.max(0, Math.min(rect.width - 16, window.innerWidth - left - 8)),
+        height: Math.max(0, Math.min(rect.height - 16, window.innerHeight - top - 8)),
+      });
+    };
+    const scheduleUpdate = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(updateSpotlight);
+    };
+    scheduleUpdate();
+    const timeout = window.setTimeout(scheduleUpdate, 180);
+    window.addEventListener("resize", scheduleUpdate);
+    window.addEventListener("scroll", scheduleUpdate, true);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.clearTimeout(timeout);
+      window.removeEventListener("resize", scheduleUpdate);
+      window.removeEventListener("scroll", scheduleUpdate, true);
+    };
+  }, [open, stepIndex]);
 
   if (!open) return null;
 
@@ -95,8 +131,22 @@ export function AppTour({ open, onClose, onFinish }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-charcoal-900/55 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-labelledby="comfymeal-tour-title">
-      <section className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-cream-200 bg-cream-50 shadow-2xl">
+    <div className="fixed inset-0 z-[100]" role="dialog" aria-modal="true" aria-labelledby="comfymeal-tour-title">
+      <div className="absolute inset-0 bg-charcoal-900/20" />
+      {spotlight && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none fixed rounded-2xl border-[3px] border-sage-500"
+          style={{
+            top: spotlight.top,
+            left: spotlight.left,
+            width: spotlight.width,
+            height: spotlight.height,
+            boxShadow: "0 0 0 9999px rgba(31, 41, 32, 0.32), 0 0 0 7px rgba(148, 180, 126, 0.28)",
+          }}
+        />
+      )}
+      <section className="absolute bottom-4 left-1/2 w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 overflow-hidden rounded-3xl border border-cream-200 bg-cream-50 shadow-2xl sm:bottom-6">
         <div className="h-1.5 w-full bg-cream-200">
           <div className="h-full rounded-r-full bg-sage-600 transition-all duration-300" style={{ width: `${((stepIndex + 1) / STEPS.length) * 100}%` }} />
         </div>
