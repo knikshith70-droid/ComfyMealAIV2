@@ -48,7 +48,7 @@ Deno.serve(async (req: Request) => {
 
     const bucket = "recipe-artwork";
     const normalizedTitle = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
-    const cacheKey = `${normalizedTitle || "meal"}-${stableKey(title.toLowerCase())}.jpg`;
+    const cacheKey = `${normalizedTitle || "meal"}-${stableKey(title.toLowerCase())}.png`;
     const storageBase = `${supabaseUrl.replace(/\/$/, "")}/storage/v1`;
     const publicUrl = `${storageBase}/object/public/${bucket}/${cacheKey}`;
     const authHeaders = { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}` };
@@ -63,7 +63,7 @@ Deno.serve(async (req: Request) => {
       const create = await fetch(`${storageBase}/bucket`, {
         method: "POST",
         headers: { ...authHeaders, "Content-Type": "application/json" },
-        body: JSON.stringify({ id: bucket, name: bucket, public: true, file_size_limit: 5242880, allowed_mime_types: ["image/jpeg"] }),
+        body: JSON.stringify({ id: bucket, name: bucket, public: true, file_size_limit: 5242880, allowed_mime_types: ["image/png"] }),
       });
       if (!create.ok && create.status !== 409) {
         console.error("Could not initialize recipe artwork storage:", create.status);
@@ -121,7 +121,7 @@ Deno.serve(async (req: Request) => {
 
     const result = await generated.json();
     const imageData = result?.result?.image as string | undefined;
-    const mimeType = "image/jpeg";
+    const mimeType = "image/png";
     if (!imageData) {
       console.error("Cloudflare Workers AI returned no image payload:", JSON.stringify(result).slice(0, 500));
       return json({ error: "The image provider did not return an image." }, 502);
