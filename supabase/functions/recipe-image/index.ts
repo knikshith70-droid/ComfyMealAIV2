@@ -81,19 +81,40 @@ Deno.serve(async (req: Request) => {
       "No people, no hands, no text, no letters, no watermark, no collage. Square composition with the food centered, suitable for cropping into a recipe card.",
     ].filter(Boolean).join(" ");
 
-    const generated = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-image:generateContent",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { responseModalities: ["IMAGE"] },
-        }),
-        signal: AbortSignal.timeout(45000),
-      },
-    );
+    const geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-image:generateContent";
+    const requestBody = JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { responseModalities: ["IMAGE"] },
+    });
+    const retryableStatuses = new Set([429, 500, 502, 503, 504]);
+    let generated: Response | undefined;
+    let lastNetworkError: unknown;
 
+    // Retry transient overload, rate-limit, server, and network failures up to 3 attempts.
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        generated = await fetch(geminiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+          body: requestBody,
+          signal: AbortSignal.timeout(30000),
+        });
+        lastNetworkError = undefined;
+        if (generated.ok || !retryableStatuses.has(generated.status) || attempt === 2) break;
+        console.warn(`Gemini temporarily unavailable (HTTP ${generated.status}); retrying attempt ${attempt + 2}/3.`);
+      } catch (error) {
+        lastNetworkError = error;
+        if (attempt === 2) break;
+        console.warn(`Gemini image request failed temporarily; retrying attempt ${attempt + 2}/3.`);
+      }
+      // Short exponential backoff: 700 ms, then 1400 ms.
+      await new Promise((resolve) => setTimeout(resolve, 700 * (2 ** attempt)));
+    }
+
+    if (!generated) {
+      console.error("Gemini image generation failed after retries:", lastNetworkError instanceof Error ? lastNetworkError.message : "Network error");
+      return json({ error: "Gemini is temporarily unavailable. Please try again shortly." }, 503);
+    }
     if (!generated.ok) {
       console.error("Gemini image generation failed:", generated.status, (await generated.text()).slice(0, 500));
       return json({ error: "Gemini could not generate this meal image." }, 502);
