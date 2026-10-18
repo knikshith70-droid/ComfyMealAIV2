@@ -3,7 +3,7 @@ import { useAuth } from "../lib/auth";
 import { useI18n } from "../lib/i18n";
 import { useNav, type Page } from "../lib/nav";
 import {
-  LayoutDashboard, Bookmark, History, CalendarRange, Globe, Settings, LogOut, X,
+  LayoutDashboard, Bookmark, History, CalendarRange, Globe, Settings, LogOut, X, BookOpen,
 } from "lucide-react";
 
 const NAV_ITEMS: { page: Page; labelKey: string; icon: React.ReactNode }[] = [
@@ -18,9 +18,10 @@ const NAV_ITEMS: { page: Page; labelKey: string; icon: React.ReactNode }[] = [
 interface Props {
   open: boolean;
   onClose: () => void;
+  onStartTour: () => void;
 }
 
-export function Sidebar({ open, onClose }: Props) {
+export function Sidebar({ open, onClose, onStartTour }: Props) {
   const { user, signOut } = useAuth();
   const { t } = useI18n();
   const { page, navigate } = useNav();
@@ -107,6 +108,14 @@ export function Sidebar({ open, onClose }: Props) {
         </nav>
 
         <div className="p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] border-t border-cream-200">
+          <button
+            type="button"
+            onClick={() => { onClose(); onStartTour(); }}
+            className="w-full flex items-center gap-3 px-3.5 py-3 mb-1 rounded-xl text-sm font-medium text-sage-800 hover:bg-sage-100 transition-all duration-150"
+          >
+            <BookOpen className="h-5 w-5 text-sage-700" />
+            Take the app tour
+          </button>
           <button
             type="button"
             onClick={handleSignOut}
