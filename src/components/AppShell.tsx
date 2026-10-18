@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../lib/auth";
 import { useI18n, LANGUAGES, type Lang } from "../lib/i18n";
 import { useNav } from "../lib/nav";
 import { Logo, Wordmark } from "./Logo";
 import { Sidebar } from "./Sidebar";
+import { AppTour, hasSeenAppTour, markAppTourSeen } from "./AppTour";
 import { DashboardPage } from "../pages/DashboardPage";
 import { GeneratePage } from "../pages/GeneratePage";
 import { SavedRecipesPage } from "../pages/SavedRecipesPage";
@@ -44,6 +45,17 @@ export function AppShell({ profile: rawProfile }: Props) {
   const { page, navigate, pendingAction, consumePendingAction } = useNav();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
+  const [tourOpen, setTourOpen] = useState(() => !hasSeenAppTour());
+
+  useEffect(() => {
+    if (tourOpen) setSidebarOpen(false);
+  }, [tourOpen]);
+
+  const finishTour = () => markAppTourSeen();
+  const restartTour = () => {
+    setSidebarOpen(false);
+    setTourOpen(true);
+  };
 
   const initials = user?.email ? user.email.slice(0, 2).toUpperCase() : "U";
   const displayName = user?.email?.split("@")[0] ?? "chef";
@@ -138,7 +150,8 @@ export function AppShell({ profile: rawProfile }: Props) {
       </main>
 
       {/* Sidebar drawer */}
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} onStartTour={restartTour} />
+      <AppTour open={tourOpen} onClose={() => setTourOpen(false)} onFinish={finishTour} />
     </div>
   );
 }
