@@ -118,10 +118,15 @@ export function GeneratePage({ profile, pendingAction, onConsumeAction }: Props)
   }, [profile.id, recipes, pantryFlags, flex]);
 
   useEffect(() => {
-    if (recipes.length > 0) {
-      window.requestAnimationFrame(() => recipeResultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
-    }
-  }, [recipes]);
+    if (recipes.length === 0 || generating) return;
+    // Wait for the newly generated cards to commit before measuring/scrolling.
+    const firstFrame = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        recipeResultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
+    return () => window.cancelAnimationFrame(firstFrame);
+  }, [recipes, generating]);
 
   const useSoonNames = useMemo(() => new Set(pantryFlags.filter((p) => p.use_soon).map((p) => p.name)), [pantryFlags]);
 
