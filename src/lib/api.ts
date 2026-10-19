@@ -374,11 +374,12 @@ export async function saveMealPlanToSavedRecipes(duration: string, settings: Mea
       .filter((item) => item.recipe?.title),
   );
   const title = `Meal Plan — ${duration}`;
-  const description = `Saved meal plan for ${planData.length} day(s). Budget: ${settings.budget}; cooking time: ${settings.cook_time}.`;
+  const description = `A ${planData.length}-day meal plan. Budget: ${settings.budget}; cooking time: ${settings.cook_time}.`;
   const ingredients = meals.flatMap(({ recipe }) => recipe.ingredients ?? []);
-  const steps = meals.map(({ day, index, slot, recipe }) =>
-    `Day ${index + 1} (${day.date ?? "date not set"}) — ${slot}: ${recipe.title}. ${recipe.description ?? ""}`,
-  );
+  // Keep the full plan structure in the existing text[] steps column so each
+  // meal retains its own ingredients, instructions, date and recipe metadata.
+  // The Saved Recipes page recognises this marker and renders a dedicated view.
+  const steps = [`COMFYMEAL_PLAN_JSON:${JSON.stringify({ version: 1, duration, settings, plan: planData })}`];
   const tags = ["Meal Plan", duration, ...settings.dietary].filter(Boolean);
   await saveRecipe({
     title,
