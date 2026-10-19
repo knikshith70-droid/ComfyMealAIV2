@@ -79,6 +79,17 @@ export function SavedRecipesPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                  {isMealPlan && (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setExpanded(open ? null : recipe.id); }}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-sage-100 text-sage-800 hover:bg-sage-200 transition px-3 py-2 text-xs font-semibold"
+                      aria-expanded={open}
+                    >
+                      <CalendarDays className="h-3.5 w-3.5" />
+                      {open ? "Hide Plan" : "View Plan"}
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); handleDelete(recipe.id); }}
@@ -148,7 +159,7 @@ export function SavedRecipesPage() {
                     <Leaf className="h-3 w-3" /> {t("saved")} {new Date(recipe.created_at).toLocaleDateString()}
                   </div>
                 </div>
-              )})}
+              )}
             </div>
           );
         })}
