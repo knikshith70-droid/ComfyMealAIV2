@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import type { FlexSession, MealPlan, MealPlanDay, MealPlanSettings, NutritionHistoryEntry, PantryItem, PantryFlag, Profile, Recipe, Tier, SpiceItem, IngredientDetail } from "./supabase";
+import type { FlexSession, MealPlan, MealPlanDay, MealPlanSettings, NutritionHistoryEntry, PantryItem, PantryFlag, Profile, Recipe, SavedRecipe, Tier, SpiceItem, IngredientDetail } from "./supabase";
 
 export async function fetchProfile(userId: string): Promise<Profile | null> {
   const { data, error } = await supabase
@@ -346,6 +346,38 @@ export async function adjustRecipe(payload: {
     ...payload,
     action: "adjust",
   });
+}
+
+
+/** Replace a legacy saved meal-plan record with a newly generated, fully structured plan. */
+export async function updateSavedMealPlanRecipe(
+  id: string,
+  duration: string,
+  settings: MealPlanSettings,
+  planData: MealPlanDay[],
+): Promise<SavedRecipe> {
+  const meals = planData.flatMap((day) =>
+    (["breakfast", "lunch", "dinner", "snacks"] as const)
+      .map((slot) => day[slot])
+      .filter((recipe) => Boolean(recipe?.title)),
+  );
+  const steps = [`COMFYMEAL_PLAN_JSON:${JSON.stringify({ version: 1, duration, settings, plan: planData })}`];
+  const tags = ["Meal Plan", duration, ...settings.dietary].filter(Boolean);
+  const { data, error } = await supabase
+    .from("saved_recipes")
+    .update({
+      description: `A ${planData.length}-day meal plan. Budget: ${settings.budget}; cooking time: ${settings.cook_time}.`,
+      time_minutes: meals.reduce((sum, recipe) => sum + (recipe.time_minutes ?? 0), 0),
+      servings: Math.max(1, ...meals.map((recipe) => recipe.servings ?? 1)),
+      ingredients: [...new Set(meals.flatMap((recipe) => recipe.ingredients ?? []))],
+      steps,
+      tags,
+    })
+    .eq("id", id)
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data as SavedRecipe;
 }
 
 // Meal Plan Generator

@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { fetchSavedRecipes, deleteSavedRecipe } from "../lib/api";
+import { fetchSavedRecipes, deleteSavedRecipe, fetchProfile, fetchPantry, fetchSpices, generateMealPlan, updateSavedMealPlanRecipe } from "../lib/api";
 import { useI18n } from "../lib/i18n";
 import type { Recipe, SavedRecipe } from "../lib/supabase";
 import { Bookmark, Clock, Utensils, Trash2, Loader2, AlertCircle, ChevronDown, ChevronUp, Leaf, CalendarDays, Sunrise, Sun, Moon, Coffee, ChevronRight } from "lucide-react";
 import { RecipeImage } from "../components/RecipeImage";
+import { supabase } from "../lib/supabase";
 
 export function SavedRecipesPage() {
   const { t } = useI18n();
@@ -12,6 +13,7 @@ export function SavedRecipesPage() {
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [recovering, setRecovering] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -106,7 +108,7 @@ export function SavedRecipesPage() {
               {open && (
                 <div className="px-5 pb-5 border-t border-cream-200 pt-4 animate-fade-up">
                   {isMealPlan ? (
-                    <SavedMealPlanView recipe={recipe} />
+                    <SavedMealPlanView recipe={recipe} onRecovered={(updated) => setRecipes((prev) => prev.map((item) => item.id === updated.id ? updated : item))} />
                   ) : (
                     <>
                       <div className="mb-4">
@@ -207,8 +209,52 @@ function readSavedPlan(recipe: SavedRecipe): SavedPlanPayload | null {
   return days.size ? { version: 0, plan: [...days.entries()].sort(([a], [b]) => a - b).map(([, day]) => day) } : null;
 }
 
-function SavedMealPlanView({ recipe }: { recipe: SavedRecipe }) {
+function SavedMealPlanView({ recipe, onRecovered }: { recipe: SavedRecipe; onRecovered: (updated: SavedRecipe) => void }) {
   const payload = readSavedPlan(recipe);
+  const [isRecovering, setIsRecovering] = useState(false);
+  const [recoveryError, setRecoveryError] = useState<string | null>(null);
+  const [recoveryNotice, setRecoveryNotice] = useState<string | null>(null);
+  const isLegacy = Boolean(payload && payload.version === 0);
+  const hasMissingDetails = Boolean(payload?.plan.some((day) =>
+    (["breakfast", "lunch", "dinner", "snacks"] as const).some((slot) =>
+      day[slot]?.title && (!day[slot]?.ingredients?.length || !day[slot]?.steps?.length),
+    ),
+  ));
+
+  const recoverLegacyPlan = async () => {
+    if (!payload) return;
+    setIsRecovering(true);
+    setRecoveryError(null);
+    setRecoveryNotice(null);
+    try {
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      if (authError) throw authError;
+      const user = authData.user;
+      if (!user) throw new Error("Please sign in again to recover this meal plan.");
+      const profile = await fetchProfile(user.id);
+      if (!profile) throw new Error("Your cooking profile could not be loaded. Complete onboarding first.");
+      const [pantry, spices] = await Promise.all([fetchPantry(), fetchSpices()]);
+      const settings = { budget: payload.settings?.budget ?? "mid", cook_time: payload.settings?.cook_time ?? "standard", dietary: payload.settings?.dietary ?? [] };
+      const durationByDays: Record<number, string> = { 1: "1day", 3: "3day", 7: "1week", 14: "2week", 30: "1month" };
+      const duration = payload.duration ?? durationByDays[payload.plan.length] ?? "1day";
+      const generated = await generateMealPlan({
+        profile,
+        pantry,
+        spices,
+        duration,
+        settings,
+        language: profile.language || "en",
+      });
+      const updated = await updateSavedMealPlanRecipe(recipe.id, duration, settings, generated.plan);
+      onRecovered(updated as SavedRecipe);
+      setRecoveryNotice("Meal details regenerated and saved. Review the updated dishes before cooking.");
+    } catch (err) {
+      setRecoveryError(err instanceof Error ? err.message : "Could not regenerate this meal plan. Please try again.");
+    } finally {
+      setIsRecovering(false);
+    }
+  };
+
   if (!payload?.plan.length) {
     return <p className="text-sm muted">This saved meal plan could not be read. You can keep this saved item, but its original structure is unavailable.</p>;
   }
@@ -223,6 +269,23 @@ function SavedMealPlanView({ recipe }: { recipe: SavedRecipe }) {
 
   return (
     <div className="space-y-6">
+      {(isLegacy || hasMissingDetails) && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 sm:p-5">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-800"><AlertCircle className="h-5 w-5" /></div>
+            <div className="min-w-0 flex-1">
+              <h3 className="font-semibold text-amber-950">Some meal details are missing</h3>
+              <p className="text-sm text-amber-900/80 mt-1">This older save doesn't contain the full ingredients and cooking steps. Regenerate the plan to create complete details and save them for next time. This will replace the current menu with a newly generated plan.</p>
+              {recoveryError && <p role="alert" className="text-sm text-red-700 mt-2">{recoveryError}</p>}
+              {recoveryNotice && <p role="status" className="text-sm text-emerald-800 mt-2">{recoveryNotice}</p>}
+              <button type="button" onClick={recoverLegacyPlan} disabled={isRecovering} className="mt-3 inline-flex items-center gap-2 rounded-xl bg-sage-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-sage-900 disabled:opacity-60 transition">
+                {isRecovering ? <Loader2 className="h-4 w-4 animate-spin" /> : <Utensils className="h-4 w-4" />}
+                {isRecovering ? "Regenerating plan…" : "Regenerate missing details"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-sage-800 via-sage-700 to-emerald-900 text-white p-5 sm:p-6">
         <div className="absolute -right-7 -top-10 h-36 w-36 rounded-full border-[20px] border-white/10" />
         <div className="absolute right-14 -bottom-12 h-32 w-32 rounded-full bg-lime-300/10 blur-sm" />
