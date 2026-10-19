@@ -213,75 +213,119 @@ function SavedMealPlanView({ recipe }: { recipe: SavedRecipe }) {
     return <p className="text-sm muted">This saved meal plan could not be read. You can keep this saved item, but its original structure is unavailable.</p>;
   }
 
-  const slots: { key: MealSlotName; label: string; Icon: typeof Sunrise }[] = [
-    { key: "breakfast", label: "Breakfast", Icon: Sunrise },
-    { key: "lunch", label: "Lunch", Icon: Sun },
-    { key: "dinner", label: "Dinner", Icon: Moon },
-    { key: "snacks", label: "Snacks", Icon: Coffee },
+  const slots: { key: MealSlotName; label: string; Icon: typeof Sunrise; tint: string }[] = [
+    { key: "breakfast", label: "Breakfast", Icon: Sunrise, tint: "from-amber-50 to-orange-50 border-amber-100" },
+    { key: "lunch", label: "Lunch", Icon: Sun, tint: "from-lime-50 to-emerald-50 border-lime-100" },
+    { key: "dinner", label: "Dinner", Icon: Moon, tint: "from-indigo-50 to-violet-50 border-indigo-100" },
+    { key: "snacks", label: "Snacks", Icon: Coffee, tint: "from-rose-50 to-pink-50 border-rose-100" },
   ];
+  const totalMeals = payload.plan.reduce((total, day) => total + slots.filter(({ key }) => Boolean(day[key]?.title)).length, 0);
 
   return (
-    <div className="space-y-5">
-      <div className="rounded-xl bg-cream-100/70 border border-cream-200 px-4 py-3">
-        <div className="flex items-center gap-2 font-medium text-charcoal-900">
-          <CalendarDays className="h-4 w-4 text-sage-700" />
-          {payload.plan.length}-day meal plan
-        </div>
-        <div className="flex flex-wrap gap-2 mt-2">
-          {payload.settings?.dietary?.filter((tag) => !tag.toLowerCase().startsWith("no ")).map((tag) => (
-            <span key={tag} className="rounded-full bg-sage-100 text-sage-800 text-xs px-2.5 py-1">{tag}</span>
-          ))}
-          {payload.settings?.budget && <span className="rounded-full bg-white/70 text-charcoal-700 text-xs px-2.5 py-1">Budget: {payload.settings.budget}</span>}
-          {payload.settings?.cook_time && <span className="rounded-full bg-white/70 text-charcoal-700 text-xs px-2.5 py-1">Cooking time: {payload.settings.cook_time}</span>}
+    <div className="space-y-6">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-sage-800 via-sage-700 to-emerald-900 text-white p-5 sm:p-6">
+        <div className="absolute -right-7 -top-10 h-36 w-36 rounded-full border-[20px] border-white/10" />
+        <div className="absolute right-14 -bottom-12 h-32 w-32 rounded-full bg-lime-300/10 blur-sm" />
+        <div className="relative">
+          <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold tracking-wide text-white/90">
+            <CalendarDays className="h-3.5 w-3.5" /> YOUR MEAL BLUEPRINT
+          </div>
+          <h2 className="font-serif text-2xl sm:text-3xl mt-3 leading-tight">{payload.plan.length}-day meal plan</h2>
+          <p className="text-sm text-white/75 mt-1 max-w-lg">Everything planned out, one day and one delicious meal at a time.</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mt-5">
+            <div className="rounded-xl bg-white/10 border border-white/10 px-3 py-3">
+              <div className="text-2xl font-semibold">{payload.plan.length}</div>
+              <div className="text-xs text-white/70 mt-0.5">Days planned</div>
+            </div>
+            <div className="rounded-xl bg-white/10 border border-white/10 px-3 py-3">
+              <div className="text-2xl font-semibold">{totalMeals}</div>
+              <div className="text-xs text-white/70 mt-0.5">Meals included</div>
+            </div>
+            <div className="hidden sm:block rounded-xl bg-white/10 border border-white/10 px-3 py-3">
+              <div className="text-2xl font-semibold">{payload.settings?.dietary?.filter((tag) => !tag.toLowerCase().startsWith("no ")).length || "—"}</div>
+              <div className="text-xs text-white/70 mt-0.5">Food preferences</div>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2 mt-4">
+            {payload.settings?.dietary?.filter((tag) => !tag.toLowerCase().startsWith("no ")).map((tag) => (
+              <span key={tag} className="rounded-full bg-white/15 border border-white/10 text-white/90 text-xs px-2.5 py-1">{tag}</span>
+            ))}
+            {payload.settings?.budget && <span className="rounded-full bg-white/15 border border-white/10 text-white/90 text-xs px-2.5 py-1">Budget · {payload.settings.budget}</span>}
+            {payload.settings?.cook_time && <span className="rounded-full bg-white/15 border border-white/10 text-white/90 text-xs px-2.5 py-1">Cook time · {payload.settings.cook_time}</span>}
+          </div>
         </div>
       </div>
 
-      {payload.plan.map((day, dayIndex) => (
-        <section key={dayIndex} className="rounded-xl border border-cream-200 overflow-hidden">
-          <div className="flex items-center gap-2 bg-cream-100/70 px-4 py-3">
-            <span className="inline-flex items-center justify-center h-7 w-7 rounded-full bg-sage-100 text-sage-700 text-sm font-semibold">{dayIndex + 1}</span>
-            <h3 className="font-serif text-lg text-charcoal-900">Day {dayIndex + 1}</h3>
-            {day.date && <span className="text-xs muted ml-auto">{day.date}</span>}
-          </div>
-          <div className="divide-y divide-cream-200">
-            {slots.map(({ key, label, Icon }) => {
-              const meal = day[key];
-              if (!meal?.title) return null;
-              return (
-                <details key={key} className="group px-4 py-3">
-                  <summary className="flex items-start gap-3 cursor-pointer list-none">
-                    <Icon className="h-4 w-4 text-sage-700 mt-1 shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[11px] font-semibold uppercase tracking-wider text-sage-700">{label}</div>
-                      <div className="font-medium text-charcoal-900 mt-0.5">{meal.title}</div>
-                      {meal.description && <p className="text-sm text-charcoal-700 mt-1 leading-relaxed">{meal.description}</p>}
-                      <div className="flex flex-wrap gap-3 text-xs muted mt-2">
-                        {meal.time_minutes > 0 && <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />{meal.time_minutes} min</span>}
-                        {meal.servings > 0 && <span className="inline-flex items-center gap-1"><Utensils className="h-3 w-3" />{meal.servings} servings</span>}
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h3 className="font-serif text-xl text-charcoal-900">Your daily menu</h3>
+          <p className="text-xs muted mt-1">Open any meal to see its ingredients and cooking instructions.</p>
+        </div>
+        <span className="shrink-0 rounded-full bg-sage-100 text-sage-800 px-3 py-1.5 text-xs font-semibold">{totalMeals} meals</span>
+      </div>
+
+      <div className="space-y-5">
+        {payload.plan.map((day, dayIndex) => {
+          const dayMeals = slots.filter(({ key }) => Boolean(day[key]?.title)).length;
+          return (
+            <section key={dayIndex} className="relative overflow-hidden rounded-2xl border border-cream-200 bg-white shadow-sm">
+              <div className="flex items-center gap-3 px-4 sm:px-5 py-4 bg-gradient-to-r from-cream-100 via-white to-sage-50 border-b border-cream-200">
+                <div className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-xl bg-sage-700 text-white shadow-sm">
+                  <span className="text-[9px] uppercase tracking-widest text-white/70">Day</span>
+                  <span className="text-lg font-bold leading-4">{dayIndex + 1}</span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h4 className="font-serif text-lg text-charcoal-900">Day {dayIndex + 1}</h4>
+                  <p className="text-xs muted mt-0.5">{day.date || "Your menu for the day"}</p>
+                </div>
+                <span className="rounded-full border border-sage-200 bg-white px-2.5 py-1 text-xs font-medium text-sage-800">{dayMeals} {dayMeals === 1 ? "meal" : "meals"}</span>
+              </div>
+              <div className="p-3 sm:p-4 grid sm:grid-cols-2 gap-3">
+                {slots.map(({ key, label, Icon, tint }) => {
+                  const meal = day[key];
+                  if (!meal?.title) return (
+                    <div key={key} className="flex items-center gap-3 rounded-xl border border-dashed border-cream-200 px-3 py-3 opacity-60">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-cream-100 text-charcoal-700/60"><Icon className="h-4 w-4" /></span>
+                      <div><div className="text-[10px] font-semibold uppercase tracking-wider text-charcoal-700/60">{label}</div><div className="text-xs muted mt-0.5">Not planned</div></div>
+                    </div>
+                  );
+                  return (
+                    <details key={key} className="group min-w-0 rounded-xl border border-cream-200 bg-white hover:border-sage-300 hover:shadow-md transition-all duration-200 overflow-hidden">
+                      <summary className={`flex items-start gap-3 cursor-pointer list-none bg-gradient-to-br ${tint} px-3 py-3.5`}>
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/80 shadow-sm text-sage-800"><Icon className="h-5 w-5" /></span>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-charcoal-700/70">{label}</div>
+                          <div className="font-semibold text-charcoal-900 mt-1 leading-snug">{meal.title}</div>
+                          <div className="flex flex-wrap gap-2 text-[11px] text-charcoal-700/70 mt-2">
+                            {meal.time_minutes > 0 && <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />{meal.time_minutes} min</span>}
+                            {meal.servings > 0 && <span className="inline-flex items-center gap-1"><Utensils className="h-3 w-3" />{meal.servings} servings</span>}
+                          </div>
+                        </div>
+                        <ChevronDown className="h-4 w-4 text-charcoal-700/50 mt-1 shrink-0 transition-transform group-open:rotate-180" />
+                      </summary>
+                      {meal.description && <p className="px-4 pt-3 text-sm text-charcoal-700 leading-relaxed">{meal.description}</p>}
+                      <div className="p-4 grid gap-4 sm:grid-cols-2">
+                        <div>
+                          <h5 className="flex items-center gap-2 font-semibold text-sm text-charcoal-900 mb-2"><span className="h-1.5 w-1.5 rounded-full bg-sage-500" />Ingredients</h5>
+                          {meal.ingredients?.length ? (
+                            <ul className="space-y-2">{meal.ingredients.map((ingredient, i) => <li key={i} className="text-sm text-charcoal-700 flex items-start gap-2"><span className="text-sage-600 mt-0.5">✓</span><span>{ingredient}</span></li>)}</ul>
+                          ) : <p className="text-xs muted">Per-meal ingredients were not retained in this older saved plan.</p>}
+                        </div>
+                        <div>
+                          <h5 className="flex items-center gap-2 font-semibold text-sm text-charcoal-900 mb-2"><span className="h-1.5 w-1.5 rounded-full bg-clay-500" />Cooking instructions</h5>
+                          {meal.steps?.length ? (
+                            <ol className="space-y-2.5">{meal.steps.map((step, i) => <li key={i} className="flex gap-2.5 text-sm text-charcoal-700"><span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-cream-100 border border-cream-200 text-charcoal-700 text-xs font-semibold">{i + 1}</span><span className="leading-relaxed pt-0.5">{step}</span></li>)}</ol>
+                          ) : <p className="text-xs muted">Detailed cooking steps were not retained in this older saved plan.</p>}
+                        </div>
                       </div>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-charcoal-700/40 mt-1 transition-transform group-open:rotate-90" />
-                  </summary>
-                  <div className="ml-7 mt-3 grid sm:grid-cols-2 gap-4">
-                    <div>
-                      <h4 className="font-medium text-sm text-charcoal-900 mb-2">Ingredients</h4>
-                      {meal.ingredients?.length ? (
-                        <ul className="space-y-1.5">{meal.ingredients.map((ingredient, i) => <li key={i} className="text-sm text-charcoal-700 flex gap-2"><span className="text-sage-600">•</span><span>{ingredient}</span></li>)}</ul>
-                      ) : <p className="text-xs muted">Per-meal ingredients were not retained in this older saved plan.</p>}
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-sm text-charcoal-900 mb-2">Cooking instructions</h4>
-                      {meal.steps?.length ? (
-                        <ol className="space-y-2">{meal.steps.map((step, i) => <li key={i} className="flex gap-2 text-sm text-charcoal-700"><span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-sage-100 text-sage-700 text-xs">{i + 1}</span><span>{step}</span></li>)}</ol>
-                      ) : <p className="text-xs muted">Detailed cooking steps were not retained in this older saved plan.</p>}
-                    </div>
-                  </div>
-                </details>
-              );
-            })}
-          </div>
-        </section>
-      ))}
+                    </details>
+                  );
+                })}
+              </div>
+            </section>
+          );
+        })}
+      </div>
     </div>
   );
 }
