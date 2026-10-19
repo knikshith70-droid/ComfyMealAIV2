@@ -42,12 +42,41 @@ export function SavedRecipesPage() {
   }
 
   return (
-    <div className="px-5 sm:px-8 py-6 max-w-3xl mx-auto">
-      <div className="flex items-center gap-2.5 mb-6">
-        <Bookmark className="h-6 w-6 text-sage-700" />
-        <h1 className="font-serif text-3xl text-charcoal-900">{t("savedRecipesTitle")}</h1>
+    <div className="px-4 sm:px-7 lg:px-8 py-7 sm:py-9 max-w-5xl mx-auto">
+      <section className="relative isolate overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#173f35] via-[#28614e] to-[#7c9b63] text-white p-6 sm:p-8 lg:p-10 mb-8 shadow-lg shadow-sage-900/10">
+        <div className="pointer-events-none absolute -right-12 -top-16 h-56 w-56 rounded-full border-[28px] border-white/10" />
+        <div className="pointer-events-none absolute right-24 -bottom-20 h-48 w-48 rounded-full bg-lime-200/10 blur-2xl" />
+        <div className="relative grid gap-6 sm:grid-cols-[1fr_auto] sm:items-end">
+          <div className="max-w-xl">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold tracking-wide text-white/90">
+              <Bookmark className="h-3.5 w-3.5" /> YOUR PERSONAL COOKBOOK
+            </span>
+            <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl leading-tight mt-4">{t("savedRecipesTitle")}</h1>
+            <p className="text-sm sm:text-base text-white/75 mt-3 leading-relaxed max-w-lg">{t("savedRecipesSub")}</p>
+          </div>
+          <div className="flex gap-3">
+            <div className="min-w-24 rounded-2xl border border-white/15 bg-white/10 backdrop-blur px-4 py-3">
+              <div className="text-2xl sm:text-3xl font-semibold">{recipes.length}</div>
+              <div className="text-[11px] uppercase tracking-wider text-white/70 mt-1">Saved items</div>
+            </div>
+            <div className="min-w-24 rounded-2xl border border-white/15 bg-white/10 backdrop-blur px-4 py-3">
+              <div className="text-2xl sm:text-3xl font-semibold">{recipes.filter((r) => r.tags?.some((tag) => tag.toLowerCase() === "meal plan")).length}</div>
+              <div className="text-[11px] uppercase tracking-wider text-white/70 mt-1">Meal plans</div>
+            </div>
+          </div>
+        </div>
+        <div className="relative mt-7 flex flex-wrap gap-2 text-xs text-white/85">
+          <span className="rounded-full bg-white/10 px-3 py-1.5 border border-white/10">Made for your taste</span>
+          <span className="rounded-full bg-white/10 px-3 py-1.5 border border-white/10">Ready when you are</span>
+        </div>
+      </section>
+      <div className="flex items-center justify-between gap-3 mb-4">
+        <div>
+          <h2 className="font-serif text-xl sm:text-2xl text-charcoal-900">Your collection</h2>
+          <p className="text-xs muted mt-1">Open a card to revisit the recipe or explore your saved plan.</p>
+        </div>
+        <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-sage-50 border border-sage-100 text-sage-800 px-3 py-1.5 text-xs font-semibold"><Leaf className="h-3.5 w-3.5" /> Kitchen favourites</span>
       </div>
-      <p className="muted mb-7">{t("savedRecipesSub")}</p>
 
       {error && (
         <div className="mb-5 flex items-start gap-2 text-sm text-clay-700 bg-clay-50 border border-clay-200 rounded-xl px-3.5 py-3">
@@ -56,25 +85,25 @@ export function SavedRecipesPage() {
       )}
 
       {recipes.length === 0 && !loading && (
-        <div className="text-center py-16 rounded-2xl border border-dashed border-cream-300">
-          <Bookmark className="h-10 w-10 text-charcoal-700/20 mx-auto mb-3" />
+        <div className="text-center py-16 sm:py-20 rounded-[2rem] border border-dashed border-sage-200 bg-gradient-to-b from-sage-50/70 to-white">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white shadow-sm border border-sage-100"><Bookmark className="h-7 w-7 text-sage-600" /></div>
           <p className="muted">{t("noSavedRecipesDesc")}</p>
         </div>
       )}
 
-      <div className="space-y-3">
+      <div className="grid gap-4 lg:grid-cols-2">
         {recipes.map((recipe) => {
           const open = expanded === recipe.id;
           const isMealPlan = recipe.tags?.some((tag) => tag.toLowerCase() === "meal plan") ?? false;
           return (
-            <div key={recipe.id} className="card overflow-hidden">
+            <div key={recipe.id} className="group overflow-hidden rounded-3xl border border-cream-200/90 bg-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-sage-200 hover:shadow-lg hover:shadow-sage-900/5">
               <div
                 className="flex items-center justify-between gap-3 px-5 py-4 cursor-pointer hover:bg-cream-100/50 transition"
                 onClick={() => setExpanded(open ? null : recipe.id)}
               >
                 <div className="min-w-0">
-                  <div className="font-medium text-charcoal-900 truncate">{recipe.title}</div>
-                  <div className="flex items-center gap-3 text-xs muted mt-1">
+                  <div className="flex items-start gap-3 min-w-0"><div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-sage-100 to-cream-100 text-sage-800 shadow-inner">{isMealPlan ? <CalendarDays className="h-5 w-5" /> : <Utensils className="h-5 w-5" />}</div><div className="min-w-0"><div className="font-semibold text-charcoal-900 leading-snug group-hover:text-sage-900 transition-colors">{recipe.title}</div><div className="text-[10px] uppercase tracking-[0.16em] font-semibold text-sage-700/70 mt-1">{isMealPlan ? "Planned with care" : "Saved recipe"}</div></div></div>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs muted mt-2">
                     <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />{recipe.time_minutes}m</span>
                     <span className="inline-flex items-center gap-1"><Utensils className="h-3 w-3" />{t("serves")} {recipe.servings}</span>
                     {recipe.nutrition?.calories != null && <span>{recipe.nutrition.calories} kcal/srv</span>}
@@ -85,7 +114,7 @@ export function SavedRecipesPage() {
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); setExpanded(open ? null : recipe.id); }}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-sage-100 text-sage-800 hover:bg-sage-200 transition px-3 py-2 text-xs font-semibold"
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-sage-800 text-white hover:bg-sage-900 shadow-sm shadow-sage-900/10 transition px-3 py-2.5 text-xs font-semibold"
                       aria-expanded={open}
                     >
                       <CalendarDays className="h-3.5 w-3.5" />
@@ -96,7 +125,7 @@ export function SavedRecipesPage() {
                     type="button"
                     onClick={(e) => { e.stopPropagation(); handleDelete(recipe.id); }}
                     disabled={deleting === recipe.id}
-                    className="h-8 w-8 inline-flex items-center justify-center rounded-full text-charcoal-700/40 hover:text-clay-700 hover:bg-clay-50 transition"
+                    className="h-9 w-9 inline-flex items-center justify-center rounded-xl border border-cream-200 text-charcoal-700/45 hover:text-clay-700 hover:border-clay-200 hover:bg-clay-50 transition"
                     aria-label={t("remove")}
                   >
                     {deleting === recipe.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
