@@ -211,6 +211,7 @@ function readSavedPlan(recipe: SavedRecipe): SavedPlanPayload | null {
 
 function SavedMealPlanView({ recipe, onRecovered }: { recipe: SavedRecipe; onRecovered: (updated: SavedRecipe) => void }) {
   const payload = readSavedPlan(recipe);
+  const [isRecovering, setIsRecovering] = useState(false);
   const [recoveryError, setRecoveryError] = useState<string | null>(null);
   const [recoveryNotice, setRecoveryNotice] = useState<string | null>(null);
   const isLegacy = Boolean(payload && payload.version === 0);
@@ -222,7 +223,7 @@ function SavedMealPlanView({ recipe, onRecovered }: { recipe: SavedRecipe; onRec
 
   const recoverLegacyPlan = async () => {
     if (!payload) return;
-    setRecovering(recipe.id);
+    setIsRecovering(true);
     setRecoveryError(null);
     setRecoveryNotice(null);
     try {
@@ -233,7 +234,7 @@ function SavedMealPlanView({ recipe, onRecovered }: { recipe: SavedRecipe; onRec
       const profile = await fetchProfile(user.id);
       if (!profile) throw new Error("Your cooking profile could not be loaded. Complete onboarding first.");
       const [pantry, spices] = await Promise.all([fetchPantry(), fetchSpices()]);
-      const settings = payload.settings ?? { budget: "mid", cook_time: "standard", dietary: [] };
+      const settings = { budget: payload.settings?.budget ?? "mid", cook_time: payload.settings?.cook_time ?? "standard", dietary: payload.settings?.dietary ?? [] };
       const durationByDays: Record<number, string> = { 1: "1day", 3: "3day", 7: "1week", 14: "2week", 30: "1month" };
       const duration = payload.duration ?? durationByDays[payload.plan.length] ?? "1day";
       const generated = await generateMealPlan({
@@ -250,7 +251,7 @@ function SavedMealPlanView({ recipe, onRecovered }: { recipe: SavedRecipe; onRec
     } catch (err) {
       setRecoveryError(err instanceof Error ? err.message : "Could not regenerate this meal plan. Please try again.");
     } finally {
-      setRecovering(null);
+      setIsRecovering(false);
     }
   };
 
