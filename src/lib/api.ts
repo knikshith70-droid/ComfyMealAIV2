@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import type { FlexSession, MealPlan, MealPlanDay, MealPlanSettings, NutritionHistoryEntry, PantryItem, PantryFlag, Profile, Recipe, Tier, SpiceItem, IngredientDetail } from "./supabase";
+import type { FlexSession, MealPlan, MealPlanDay, MealPlanSettings, NutritionHistoryEntry, PantryItem, PantryFlag, Profile, Recipe, SavedRecipe, Tier, SpiceItem, IngredientDetail } from "./supabase";
 
 export async function fetchProfile(userId: string): Promise<Profile | null> {
   const { data, error } = await supabase
