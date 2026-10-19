@@ -269,6 +269,23 @@ function SavedMealPlanView({ recipe, onRecovered }: { recipe: SavedRecipe; onRec
 
   return (
     <div className="space-y-6">
+      {(isLegacy || hasMissingDetails) && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 sm:p-5">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-800"><AlertCircle className="h-5 w-5" /></div>
+            <div className="min-w-0 flex-1">
+              <h3 className="font-semibold text-amber-950">Some meal details are missing</h3>
+              <p className="text-sm text-amber-900/80 mt-1">This older save doesn't contain the full ingredients and cooking steps. Regenerate the plan to create complete details and save them for next time. This will replace the current menu with a newly generated plan.</p>
+              {recoveryError && <p role="alert" className="text-sm text-red-700 mt-2">{recoveryError}</p>}
+              {recoveryNotice && <p role="status" className="text-sm text-emerald-800 mt-2">{recoveryNotice}</p>}
+              <button type="button" onClick={recoverLegacyPlan} disabled={isRecovering} className="mt-3 inline-flex items-center gap-2 rounded-xl bg-sage-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-sage-900 disabled:opacity-60 transition">
+                {isRecovering ? <Loader2 className="h-4 w-4 animate-spin" /> : <Utensils className="h-4 w-4" />}
+                {isRecovering ? "Regenerating plan…" : "Regenerate missing details"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-sage-800 via-sage-700 to-emerald-900 text-white p-5 sm:p-6">
         <div className="absolute -right-7 -top-10 h-36 w-36 rounded-full border-[20px] border-white/10" />
         <div className="absolute right-14 -bottom-12 h-32 w-32 rounded-full bg-lime-300/10 blur-sm" />
