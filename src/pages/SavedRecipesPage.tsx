@@ -200,7 +200,7 @@ function readSavedPlan(recipe: SavedRecipe): SavedPlanPayload | null {
     if (!match) continue;
     const dayNumber = Number(match[1]);
     const slot = match[3].toLowerCase() as MealSlotName;
-    const day = days.get(dayNumber) ?? { date: match[2] };
+    const day: SavedPlanPayload["plan"][number] = days.get(dayNumber) ?? { date: match[2] };
     day[slot] = { title: match[4], description: match[5], time_minutes: 0, servings: 1, ingredients: [], steps: [], tags: [] };
     days.set(dayNumber, day);
   }
